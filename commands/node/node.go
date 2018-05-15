@@ -163,6 +163,38 @@ func AddCommands(cli *cli.Cli) {
 					color.Green("Successfully created new package.json")
 				},
 			},
+			command.Command{
+				Name: "test",
+				Help: "tests this project and all projects that use it",
+				Func: func(args []string) {
+					if len(args) == 0 {
+						color.Red("This function requires at least a project to test")
+						return
+					}
+					// When running this command in attached mode
+					// Kepler should not exit but only print the result
+					// When kepler is run in unattended mode,
+					// it should report the error and return a correct status code
+					projects, err := RunTestsOn(args[0])
+					if err != nil {
+						color.Red("Unable to load projects due to:%v", err)
+						return
+					}
+					combinedStatus := 0
+					color.Green("Project\tExitCode")
+					for result := range projects {
+						combinedStatus += result.ExitCode
+						switch result.ExitCode {
+						// Good state
+						case 0:
+							color.Green("%v\t%v", result.Name, result.ExitCode)
+						// bad state
+						default:
+							color.Red("%v\t%v", result.Name, result.ExitCode)
+						}
+					}
+				},
+			},
 		},
 	})
 }

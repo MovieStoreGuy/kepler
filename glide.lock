@@ -1,12 +1,16 @@
 hash: 8f0288822e145a08a814c76e2077729af127b1d29ea5cf81d8b9179b17969e2f
-updated: 2018-05-09T13:17:35.859339084+01:00
+updated: 2018-05-14T12:34:17.040818164+01:00
 imports:
 - name: cloud.google.com/go
-  version: 3b1ae45394a234c385be014e9a488f2bb6eef821
+  version: 90f2606161ee6a14efe2ca79fc05ac2b8efe250b
   subpackages:
   - compute/metadata
-  - internal
+  - iam
+  - internal/optional
+  - internal/version
   - pubsub
+  - pubsub/apiv1
+  - pubsub/internal/distribution
 - name: github.com/AlexsJones/cli
   version: ec4e2a07c8a3a526b19d42a62facad11dbf22f00
   subpackages:
@@ -37,25 +41,29 @@ imports:
 - name: github.com/fatih/color
   version: 507f6050b8568533fb3f5504de8e5205fa62a114
 - name: github.com/gogo/protobuf
-  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
+  version: 30cf7ac33676b5786e78c746683f0d4cd64fa75b
   subpackages:
   - proto
 - name: github.com/golang/protobuf
-  version: 1643683e1b54a9e88ad26d98f81400c8c9d9f4f9
+  version: 927b65914520a8b7d44f5c9057611cfec6b2e2d0
   subpackages:
   - proto
+  - protoc-gen-go/descriptor
   - ptypes
   - ptypes/any
   - ptypes/duration
+  - ptypes/empty
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: eafdb6578137f78fe186e486a4bc633e1434cc89
+  version: 8ea2e2657df890db8fb434a9274799d641bd698c
   subpackages:
   - github
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
   - query
+- name: github.com/googleapis/gax-go
+  version: de2cc08e690b99dd3f7d19937d80d3d54e04682f
 - name: github.com/GoogleCloudPlatform/docker-credential-gcr
   version: d81a5680641171cc7ffac0bcbbea78b059702cc2
   subpackages:
@@ -98,7 +106,7 @@ imports:
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
 - name: go.opencensus.io
-  version: c11636694056ed1d664b058521f3aa61016da8ba
+  version: 7838e5670888b348b2caf302c8cd862ad0e903f8
   subpackages:
   - exporter/stackdriver/propagation
   - internal
@@ -114,7 +122,7 @@ imports:
   - trace/internal
   - trace/propagation
 - name: golang.org/x/crypto
-  version: 49796115aa4b964c318aad4f3084fdb41e9aa067
+  version: 034e5325b6ab92faa14d15c30e86919e911cf8e0
   subpackages:
   - cast5
   - curve25519
@@ -132,46 +140,48 @@ imports:
   - ssh/agent
   - ssh/knownhosts
 - name: golang.org/x/net
-  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  version: 2491c5de3490fced2f6cff376127c667efeed857
   subpackages:
   - context
   - context/ctxhttp
+  - http/httpguts
   - http2
   - http2/hpack
   - idna
   - internal/timeseries
-  - lex/httplex
   - trace
 - name: golang.org/x/oauth2
-  version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
+  version: cdc340f7c179dbbfa4afd43b7614e8fcadde4269
   subpackages:
   - google
   - internal
   - jws
   - jwt
+- name: golang.org/x/sync
+  version: 1d60e4601c6fd243af51cc01ddf169918a5407ca
+  subpackages:
+  - errgroup
+  - semaphore
 - name: golang.org/x/sys
-  version: 95c6576299259db960f6c5b9b69ea52422860fce
+  version: d0faeb539838e250bd0a9db4182d48d4a1915181
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: b19bf474d317b857955b12035d2c5acb57ce8b01
+  version: 5c1cf69b5978e5a34c5f9ba09a83e56acc4b7877
   subpackages:
   - secure/bidirule
   - transform
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/api
-  version: 4bd7f4beb291148443ed4553071c4e0697ff4afb
+  version: 15aea8711db98e640b277da9771a9d74270c2edc
   subpackages:
-  - gensupport
-  - googleapi
-  - googleapi/internal/uritemplates
   - googleapi/transport
   - internal
   - iterator
   - option
-  - pubsub/v1
+  - support/bundler
   - transport
   - transport/grpc
   - transport/http
@@ -192,9 +202,13 @@ imports:
 - name: google.golang.org/genproto
   version: 86e600f69ee4704c6efbf6a2a40a5c10700e76c2
   subpackages:
+  - googleapis/api/annotations
+  - googleapis/iam/v1
+  - googleapis/pubsub/v1
   - googleapis/rpc/status
+  - protobuf/field_mask
 - name: google.golang.org/grpc
-  version: 45d7f3a23f0b937ba711aa0e3e3426325d3b9ae4
+  version: a36eb4675a1a7cbb473953b7cb273855c3bd555a
   subpackages:
   - balancer
   - balancer/base
@@ -272,7 +286,7 @@ imports:
 - name: gopkg.in/warnings.v0
   version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 - name: gopkg.in/yaml.v2
-  version: 670d4cfef0544295bc27a114dbac37980d83185a
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 testImports:
 - name: github.com/DATA-DOG/godog
   version: 943635096a91d89d87b4bb07c395d96843a27c2f

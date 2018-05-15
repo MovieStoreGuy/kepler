@@ -12,39 +12,14 @@ import (
 
 	sh "github.com/AlexsJones/kepler/commands/shell"
 	"github.com/AlexsJones/kepler/commands/submodules"
-	"github.com/MovieStoreGuy/resources/marshal"
+	"github.com/AlexsJones/kepler/types"
 	"github.com/fatih/color"
 	yaml "gopkg.in/yaml.v2"
 
 	git "gopkg.in/src-d/go-git.v4"
 )
 
-//PackageJSON structure of package.json
-type PackageJSON struct {
-	Name            string            `json:"name"`
-	Version         string            `json:"version"`
-	Description     string            `json:"description"`
-	Main            string            `json:"main"`
-	Bugs            map[string]string `json:"bugs,omitempty"`
-	Scripts         map[string]string `json:"scripts,omitempty"`
-	Dependencies    map[string]string `json:"dependencies,omitempty"`
-	DevDependencies map[string]string `json:"devDependencies,omitempty"`
-	Private         bool              `json:"private,omitempty"`
-	License         string            `json:"license,omitempty"`
-}
-
-// WriteTo will write the current contents of the PackageJSON
-// into the given directory
-func (pack *PackageJSON) WriteTo(path string) error {
-	o, err := marshal.PureMarshalIndent(pack, "", "    ")
-	if err != nil {
-		return err
-	}
-	o = append(o, []byte("\n")...)
-	return ioutil.WriteFile(path, o, 0644)
-}
-
-func recursePackages(p *PackageJSON, callback func(moduleName string, key string, value string)) error {
+func recursePackages(p *types.PackageJSON, callback func(moduleName string, key string, value string)) error {
 
 	for key, value := range p.Dependencies {
 
@@ -68,7 +43,7 @@ func hasPackage(subPath string, filename string, target string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	var packagejson PackageJSON
+	var packagejson types.PackageJSON
 	if err := json.Unmarshal(b, &packagejson); err != nil {
 		return false, err
 	}
@@ -97,7 +72,7 @@ func fixLinks(subPath string, filename string, prefix string, target string, sho
 	if err != nil {
 		return err
 	}
-	var packagejson PackageJSON
+	var packagejson types.PackageJSON
 	if err = json.Unmarshal(b, &packagejson); err != nil {
 		return err
 	}
@@ -123,8 +98,8 @@ func fixLinks(subPath string, filename string, prefix string, target string, sho
 
 // LocalNodeModules will search through all the submodules
 // and return all the projects that are valid node projects
-func LocalNodeModules() (map[string]*PackageJSON, error) {
-	Projects := make(map[string]*PackageJSON)
+func LocalNodeModules() (map[string]*types.PackageJSON, error) {
+	Projects := make(map[string]*types.PackageJSON)
 	submodules.LoopSubmodules(func(sub *git.Submodule) {
 		filepath := path.Join(sub.Config().Path, "package.json")
 		if _, node := os.Stat(filepath); !os.IsNotExist(node) {
@@ -132,7 +107,7 @@ func LocalNodeModules() (map[string]*PackageJSON, error) {
 			if err != nil {
 				return
 			}
-			var p PackageJSON
+			var p types.PackageJSON
 			if err := json.Unmarshal(b, &p); err != nil {
 				log.Println(err.Error())
 				return
@@ -156,7 +131,7 @@ func Resolve(project string) ([]string, error) {
 		return nil, fmt.Errorf("%s does not exists", project)
 	}
 	ResolvedDeps := make(map[string]bool)
-	Explore := make(map[string]*PackageJSON)
+	Explore := make(map[string]*types.PackageJSON)
 	// Making sure we don't try to explore the started node
 	// if it is required by another project
 	ResolvedDeps[project] = true
@@ -223,7 +198,7 @@ func LinkLocalDeps() error {
 
 // UpdatePackageContents will update a project Dependencies if they can
 // be found locally and update their resource to be a file link
-func updatePackageContents(project string, local map[string]*PackageJSON) (*PackageJSON, error) {
+func updatePackageContents(project string, local map[string]*types.PackageJSON) (*types.PackageJSON, error) {
 	if _, exist := local[project]; !exist {
 		return nil, fmt.Errorf("Project can not be found locally")
 	}
@@ -259,8 +234,8 @@ func RestoreBackups() error {
 	return nil
 }
 
-func CreateMetaPackageJson(skipIgnores bool) (*PackageJSON, error) {
-	metaPackage := &PackageJSON{
+func CreateMetaPackageJson(skipIgnores bool) (*types.PackageJSON, error) {
+	metaPackage := &types.PackageJSON{
 		Version:         "1.0.0",
 		Description:     "An auto generated package json",
 		Main:            "index.js",
