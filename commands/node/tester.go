@@ -3,6 +3,7 @@
 package node
 
 import (
+	"os/exec"
 	"runtime"
 	"sync"
 
@@ -28,13 +29,28 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 	wg := sync.WaitGroup{}
 	// detaching the dispatcher thread from the main as
 	// as to avoid blocking the main thread
+	// THIS CODE IS GROSS AND I REALLY DON'T LIKE IT
 	go func(ch chan TestedProject, projects []string) {
-		wg.Add(len(projects))
-		for _, p := range project {
-			go func(wg *sync.WaitGroup, ch chan TestedProject) {
-
-			}(&wg, ch)
-			wg.Done()
+		wg.Add(len(projects) + 1)
+		for _, p := range projects {
+			go func(p string, wg *sync.WaitGroup, ch chan TestedProject) {
+				c := exec.Command(command[0], command[1:]...)
+				c.Dir = p
+				exitCode := 0
+				if err := c.Wait(); err != nil {
+					// Figure out why the thing failed
+				}
+				buff, err := c.CombinedOutput()
+				if err != nil {
+					// Complain on some degree
+				}
+				ch <- TestedProject{
+					Name:     p,
+					ExitCode: exitCode,
+					Output:   buff,
+				}
+				wg.Done()
+			}(p, &wg, ch)
 		}
 		wg.Wait()
 		close(ch)
