@@ -3,7 +3,7 @@
 package node
 
 import (
-	"fmt"
+	"errors"
 	"os/exec"
 	"runtime"
 	"sync"
@@ -36,30 +36,11 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 		wg.Add(len(projects))
 		for _, p := range projects {
 			go func(p string, wg *sync.WaitGroup, ch chan TestedProject) {
-				str := append([]string{"-c"}, command...)
-				c := exec.Command("/bin/sh", str...)
-				c.Dir = p
-				if err := c.Start(); err != nil {
-					// blah
-					fmt.Println("Failed to start because: ", err)
-				}
-				exitCode := 0
-				if err := c.Wait(); err != nil {
-					if exiter, ok := err.(*exec.ExitError); ok {
-						if status, ok := exiter.Sys().(syscall.WaitStatus); ok {
-							exitCode = int(status.ExitStatus())
-						}
-					}
-				}
-				buff, err := c.CombinedOutput()
+				ret, err := executeTests(p, "npm", "test")
 				if err != nil {
-					buff = []byte(`Unable to get output due to ` + err.Error())
+					// Not sure what to do here
 				}
-				ch <- TestedProject{
-					Name:     p,
-					ExitCode: exitCode,
-					Output:   buff,
-				}
+				ch <- ret
 				wg.Done()
 			}(p, &wg, ch)
 		}
@@ -70,5 +51,23 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 }
 
 func executeTests(project string, cmd ...string) (TestedProject, error) {
-	return TestedProject{}, nil
+	if len(cmd) < 2 {
+		return TestedProject{}, errors.New("Not enough arguments passed for command")
+	}
+	c := exec.Command(cmd[0], cmd[1:]...)
+	c.Dir = project
+	buff, err := c.CombinedOutput()
+	exitCode := 0
+	if err != nil {
+		if exiter, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiter.Sys().(syscall.WaitStatus); ok {
+				exitCode = int(status.ExitStatus())
+			}
+		}
+	}
+	return TestedProject{
+		Name:     project,
+		ExitCode: exitCode,
+		Output:   buff,
+	}, nil
 }
