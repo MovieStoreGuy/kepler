@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"runtime"
 	"sync"
+	"syscall"
 
 	blast "github.com/LGUG2Z/blastradius"
 )
@@ -39,10 +40,15 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 				exitCode := 0
 				if err := c.Wait(); err != nil {
 					// Figure out why the thing failed
+					if exiter, ok := err.(*exec.ExitError); ok {
+						if status, ok := exiter.Sys().(syscall.WaitStatus); ok {
+							exitCode = int(status.ExitStatus())
+						}
+					}
 				}
 				buff, err := c.CombinedOutput()
 				if err != nil {
-					// Complain on some degree
+					buff = []byte(`Unable to get output due to ` + err.Error())
 				}
 				ch <- TestedProject{
 					Name:     p,
