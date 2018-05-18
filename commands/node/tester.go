@@ -3,6 +3,7 @@
 package node
 
 import (
+	"fmt"
 	"os/exec"
 	"runtime"
 	"sync"
@@ -32,14 +33,18 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 	// as to avoid blocking the main thread
 	// THIS CODE IS GROSS AND I REALLY DON'T LIKE IT
 	go func(ch chan TestedProject, projects []string) {
-		wg.Add(len(projects) + 1)
+		wg.Add(len(projects))
 		for _, p := range projects {
 			go func(p string, wg *sync.WaitGroup, ch chan TestedProject) {
-				c := exec.Command(command[0], command[1:]...)
+				str := append([]string{"-c"}, command...)
+				c := exec.Command("/bin/sh", str...)
 				c.Dir = p
+				if err := c.Start(); err != nil {
+					// blah
+					fmt.Println("Failed to start because: ", err)
+				}
 				exitCode := 0
 				if err := c.Wait(); err != nil {
-					// Figure out why the thing failed
 					if exiter, ok := err.(*exec.ExitError); ok {
 						if status, ok := exiter.Sys().(syscall.WaitStatus); ok {
 							exitCode = int(status.ExitStatus())

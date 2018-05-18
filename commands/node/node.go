@@ -175,22 +175,21 @@ func AddCommands(cli *cli.Cli) {
 					// Kepler should not exit but only print the result
 					// When kepler is run in unattended mode,
 					// it should report the error and return a correct status code
-					projects, err := RunTestsOn(args[0])
+					projects, err := RunTestsOn(args[0], "npm", "test")
 					if err != nil {
 						color.Red("Unable to load projects due to:%v", err)
 						return
 					}
 					combinedStatus := 0
-					color.Green("Project\tExitCode")
 					for result := range projects {
 						combinedStatus += result.ExitCode
 						switch result.ExitCode {
 						// Good state
 						case 0:
-							color.Green("%v\t%v", result.Name, result.ExitCode)
+							color.Green("Test pass: %v\n", result.Name)
 						// bad state
 						default:
-							color.Red("%v\t%v", result.Name, result.ExitCode)
+							color.Red("Test failed: %v, see:\n%v\n", result.Name, string(result.Output))
 						}
 					}
 				},
