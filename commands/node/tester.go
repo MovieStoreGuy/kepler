@@ -31,7 +31,6 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 	wg := sync.WaitGroup{}
 	// detaching the dispatcher thread from the main as
 	// as to avoid blocking the main thread
-	// THIS CODE IS GROSS AND I REALLY DON'T LIKE IT
 	go func(ch chan TestedProject, projects []string) {
 		wg.Add(len(projects))
 		for _, p := range projects {
