@@ -3,7 +3,7 @@
 package node
 
 import (
-	"errors"
+	"os"
 	"os/exec"
 	"runtime"
 	"sync"
@@ -23,6 +23,9 @@ type TestedProject struct {
 // RunTestsOn will test the given project
 // and all projects that use the given project
 func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
+	if _, err := os.Stat(project); os.IsNotExist(err) {
+		return nil, err
+	}
 	projects, err := blast.Calculate(".", project)
 	if err != nil {
 		return nil, err
@@ -35,11 +38,7 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 		wg.Add(len(projects))
 		for _, p := range projects {
 			go func(p string, wg *sync.WaitGroup, ch chan TestedProject) {
-				ret, err := executeTests(p, "npm", "test")
-				if err != nil {
-					// Not sure what to do here
-				}
-				ch <- ret
+				ch <- executeTests(p, "npm", "test")
 				wg.Done()
 			}(p, &wg, ch)
 		}
@@ -49,9 +48,9 @@ func RunTestsOn(project string, command ...string) (chan TestedProject, error) {
 	return results, nil
 }
 
-func executeTests(project string, cmd ...string) (TestedProject, error) {
+func executeTests(project string, cmd ...string) TestedProject {
 	if len(cmd) < 2 {
-		return TestedProject{}, errors.New("Not enough arguments passed for command")
+		return TestedProject{project, 1, []byte("Not enough args pased to execute")}
 	}
 	c := exec.Command(cmd[0], cmd[1:]...)
 	c.Dir = project
@@ -68,5 +67,5 @@ func executeTests(project string, cmd ...string) (TestedProject, error) {
 		Name:     project,
 		ExitCode: exitCode,
 		Output:   buff,
-	}, nil
+	}
 }
